@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional,List
 
 class PublicationCreate(BaseModel):
     ContentPubli: str = Field(..., max_length=1000)
@@ -16,3 +16,33 @@ class PublicationListResponse(BaseModel):
     ImagePubli: Optional[str]
     Date: datetime
     UserID: int
+
+class PublicationListResponseExtended(BaseModel):
+    PublicationID: int
+    ContentPubli: str
+    ImagePubli: Optional[str]
+    Date: datetime
+    UserID: int
+    CommentCount: int
+    ReactionCount: int
+
+class UserBasicResponse(BaseModel):
+    UserID: int
+    UserName: str
+    UserImage: Optional[str]
+
+class CommentResponseExtended(BaseModel):
+    ContentComment: str
+    Date: datetime
+    User: UserBasicResponse
+
+class DetailPublicationResponse(BaseModel):
+    PublicationID: int
+    ContentPubli: str
+    ImagePubli: Optional[str]
+    Date: datetime
+    UserID: int
+    CommentCount: int
+    ReactionCount: int
+    Reactions: List[UserBasicResponse] = []
+    Comments: List[CommentResponseExtended] = []
