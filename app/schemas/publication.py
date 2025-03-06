@@ -46,3 +46,14 @@ class DetailPublicationResponse(BaseModel):
     ReactionCount: int
     Reactions: List[UserBasicResponse] = []
     Comments: List[CommentResponseExtended] = []
+
+class ProfileResponseExtended(BaseModel):
+    UserID: int
+    FirstName: str
+    LastName: str
+    UserName: str
+    UserImage: Optional[str]
+    Bio: Optional[str]
+    PhoneNumber: Optional[str]
+    PublicationCount: int
+    ReactionCount: int

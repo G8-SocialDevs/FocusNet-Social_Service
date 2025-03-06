@@ -6,7 +6,7 @@ from app.models.publication import Publication
 from app.models.comment import Comment
 from app.models.reaction import Reaction
 from app.models.user import User
-from app.schemas.publication import PublicationCreate, PublicationResponse, PublicationListResponse, PublicationListResponseExtended, UserBasicResponse, CommentResponseExtended, DetailPublicationResponse
+from app.schemas.publication import PublicationCreate, PublicationResponse, PublicationListResponse, PublicationListResponseExtended, UserBasicResponse, CommentResponseExtended, DetailPublicationResponse, ProfileResponseExtended
 from typing import List
 
 router = APIRouter()
@@ -171,3 +171,26 @@ def delete_publication(publication_id: int, db: Session = Depends(get_db)):
     db.delete(publication)
     db.commit()
     return {"message": "Publicación eliminada exitosamente"}
+
+@router.get("/obtain_detailed_profile/{user_id}", response_model=ProfileResponseExtended)
+def obtain_profile(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.UserID == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no existente")
+
+    publication_count = db.query(func.count(Publication.PublicationID)).filter(Publication.UserID == user_id).scalar()
+    
+    reaction_count = db.query(func.count(Reaction.ReactionID)).filter(Reaction.UserID == user_id).scalar()
+
+    return {
+        "UserID": user.UserID,
+        "FirstName": user.FirstName,
+        "LastName": user.LastName,
+        "UserName": user.UserName,
+        "UserImage": user.UserImage,
+        "Bio": user.Bio,
+        "PhoneNumber": user.PhoneNumber,
+        "PublicationCount": publication_count,
+        "ReactionCount": reaction_count
+    }
