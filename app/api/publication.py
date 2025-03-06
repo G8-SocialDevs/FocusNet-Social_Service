@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from app.database import get_db
 from app.models.publication import Publication
 from app.models.comment import Comment
@@ -34,6 +34,7 @@ def list_publications(db: Session = Depends(get_db)):
         .outerjoin(Comment, Publication.PublicationID == Comment.PublicationID)
         .outerjoin(Reaction, Publication.PublicationID == Reaction.PublicationID)
         .group_by(Publication.PublicationID)
+        .order_by(desc(Publication.Date))
         .all()
     )
     
@@ -113,7 +114,9 @@ def list_user_publications(user_id: int, db: Session = Depends(get_db)):
     ).outerjoin(Comment, Publication.PublicationID == Comment.PublicationID)
     .outerjoin(Reaction, Publication.PublicationID == Reaction.PublicationID)
     .filter(Publication.UserID == user_id)
-    .group_by(Publication.PublicationID).all()
+    .group_by(Publication.PublicationID)
+    .order_by(desc(Publication.Date))
+    .all()
     )
     
     return [
@@ -129,6 +132,32 @@ def list_user_publications(user_id: int, db: Session = Depends(get_db)):
         for pub, comment_count, reaction_count in publications
     ]
 
+@router.get("/users/{user_id}/list_user_reacted_publications/", response_model=List[PublicationListResponseExtended])
+def list_user_reacted_publications(user_id: int, db: Session = Depends(get_db)):
+    publications = (db.query(
+        Publication,
+        func.count(Comment.CommentID).label("CommentCount"),
+        func.count(Reaction.ReactionID).label("ReactionCount")
+    ).outerjoin(Comment, Publication.PublicationID == Comment.PublicationID)
+    .outerjoin(Reaction, Publication.PublicationID == Reaction.PublicationID)
+    .filter(Reaction.UserID == user_id)
+    .group_by(Publication.PublicationID)
+    .order_by(desc(Publication.Date))
+    .all()
+    )
+    
+    return [
+        PublicationListResponseExtended(
+            PublicationID=pub.PublicationID,
+            ContentPubli=pub.ContentPubli,
+            ImagePubli=pub.ImagePubli,
+            Date=pub.Date,
+            UserID=pub.UserID,
+            CommentCount=comment_count,
+            ReactionCount=reaction_count
+        )
+        for pub, comment_count, reaction_count in publications
+    ]
 
 @router.delete("/delete_publication/{publication_id}")
 def delete_publication(publication_id: int, db: Session = Depends(get_db)):
